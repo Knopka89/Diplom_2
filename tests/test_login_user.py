@@ -1,20 +1,16 @@
 import allure
 import pytest
-import requests
 
 from data import ResponseMessages
 from helpers import generate_random_string
-from urls import Urls
+from helpers import login_user
 
 
 class TestLoginUser:
-    @allure.step("Авторизовать пользователя")
-    def login_user(self, credentials):
-        return requests.post(Urls.LOGIN_URL, json=credentials, timeout=30)
 
     @allure.title("Вход существующего пользователя")
     def test_login_existing_user(self, registered_user):
-        response = self.login_user({key: registered_user[key] for key in ["email", "password"]})
+        response = login_user({key: registered_user[key] for key in ["email", "password"]})
 
         assert response.status_code == 200
         body = response.json()
@@ -29,7 +25,7 @@ class TestLoginUser:
         credentials = {key: registered_user[key] for key in ["email", "password"]}
         credentials[field] = generate_random_string() + ("@example.com" if field == "email" else "")
 
-        response = self.login_user(credentials)
+        response = login_user(credentials)
 
         assert response.status_code == 401
         assert response.json() == {"success": False, "message": ResponseMessages.INVALID_CREDENTIALS}

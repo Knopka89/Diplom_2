@@ -21,16 +21,37 @@ def generate_user_data():
 
 @allure.step("Удалить созданного тестового пользователя")
 def delete_user(data):
-    response = requests.post(
-        Urls.LOGIN_URL,
-        json={"email": data["email"], "password": data["password"]},
-        timeout=30,
-    )
+    response = login_user({"email": data["email"], "password": data["password"]})
     if response.status_code == 401:
         return
-    assert response.status_code == 200
+    response.raise_for_status()
     token = response.json()["accessToken"]
     response = requests.delete(
         Urls.USER_URL, headers={"Authorization": token}, timeout=30
     )
-    assert response.status_code == 202
+    response.raise_for_status()
+
+
+@allure.step("Создать заказ")
+def create_order(ingredients, token=None):
+    headers = {"Authorization": token} if token else {}
+    return requests.post(
+        Urls.ORDERS_URL, json={"ingredients": ingredients}, headers=headers, timeout=45
+    )
+
+
+@allure.step("Создать пользователя")
+def create_user(payload):
+    return requests.post(Urls.REGISTER_URL, json=payload, timeout=30)
+
+
+@allure.step("Авторизовать пользователя")
+def login_user(credentials):
+    return requests.post(Urls.LOGIN_URL, json=credentials, timeout=30)
+
+
+@allure.step("Получить ингредиенты для тестового заказа")
+def get_ingredients():
+    response = requests.get(Urls.INGREDIENTS_URL, timeout=30)
+    response.raise_for_status()
+    return response.json()["data"]
